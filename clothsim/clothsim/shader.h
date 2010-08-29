@@ -1,0 +1,23 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+//	shader.h
+//
+//	CS 175: Computer Graphics
+//	Harvard University
+//
+//	functions for handling shaders
+//
+/////////////////////////////////////////////////////////////////////////////
+
+#ifndef	SHADER_H
+#define SHADER_H
+
+#include <stdio.h>
+#include <stdlib.h>
+
+// F I L E   H A N D L I N G ///////////////////////////////////////////
+
+bool ShaderInit(const char *vertexfile, const char *fragfile, GLuint &h_program);
+
+
+#endif

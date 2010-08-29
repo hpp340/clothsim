@@ -1,0 +1,18 @@
+THIS IS OLD NOW... JUST COMPILE IN VISUAL STUDIO
+
+
+**************************************************
+extract the .rars
+
+copy the .dll files to windows\system32\
+
+copy the .dll files to program files (x86)\visual studio 8\VC\bin\
+
+copy the .lib files to program files (x86)\visual studio 8\VC\lib\
+
+copy the .h files (glut.h) to program files (x86)\visual studio 8\VC\include\GL\
+
+put all the right things in the linker in the project property window 
+(see any of the CS175 projects for reference).
+
+DONE!!
