@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "glFuncs.h"
 #include "GLOBALS.h"
+#include "timeKeeper.h"
 
 const int matrixsize = 27; // Can't use extern const with array initializations
 
@@ -73,6 +74,7 @@ void drawStuff(void)
 		glVertexAttrib1f(h_vMVIndex, 0.0);
 		glNormal3f(0.0, 1.0, 0.0);
 		glBegin(GL_TRIANGLES);
+		glVertexAttrib1f(h_drawcloth, 0.0);
 		glVertexAttrib3f(h_vColor, 0.3, 0.7, 0.8);
 		glNormal3f(0.0, 1.0, 0.0);
 		glVertex3f(-FLOOR_SIZE, FLOOR_Y, -FLOOR_SIZE);
@@ -365,8 +367,17 @@ void KeyFunc(unsigned char key, int x, int y)
 		} display();
 				}
 				break;
+	case ('n'): {
+		while(cur_frame->lastframe != NULL) { // Go to the start of the list
+			cur_frame = cur_frame->lastframe;
+		}
+		cur_frame->UpdateToFrame(*g_cloth);
+		glutPostRedisplay();
+		display();
+				break;
+    }
 	case ('r'): {
-		while(cur_frame->lastframe != NULL) {
+		while(cur_frame->lastframe != NULL) { // Go to the start of the list
 			cur_frame = cur_frame->lastframe;
 		}
 		printf("\nAt start\n");
@@ -374,33 +385,74 @@ void KeyFunc(unsigned char key, int x, int y)
 		glutPostRedisplay();
 		display();
 
+		timeKeeper * time = new timeKeeper();
+		float curTime = time->GetTime();
+		float lastTime = curTime;
+		float accumulator = 0.0f;
+
 		// do an arc ball routine to make it look nice
 		rbt new_O_frame;
 		rbt O_frame;
 		rbt S_frame;
 		rbt inv_S_frame;
 
+		// find the qrot (from class notes it is [0, v1].[0, v0] hence w = 0) and therefore the rbt Q
+		// This is to spin the ball around
+		qrot rot;
+		rbt Q;
+
+		// Axis angle to quaternion
+		//http://www.euclideanspace.com/maths/geometry/rotations/conversions/angleToQuaternion/index.htm
+		coords3 axis;
+		axis.x = 0.0; axis.y = 1.0; axis.z = 0.0;
+		float angle = (0.25/360.0)*(2.0*3.141596);
+		double mult = sin(angle / 2.0);
+
+		rot.x = axis.x * mult;
+		rot.y = axis.y * mult;
+		rot.z = axis.z * mult;
+		rot.w = cos(angle / 2.0);
+		// normalize the rotation
+		double mag = sqrt(rot.x*rot.x + rot.y*rot.y + rot.z*rot.z + rot.w*rot.w);
+		rot.x = rot.x / mag;
+		rot.y = rot.y / mag;
+		rot.z = rot.z / mag;
+		rot.w = rot.w / mag;
+		Q = rbt(rot);
+
+		float time_scale = 1.0f; // slow down the time a little bit
+
 		while(cur_frame->nextframe != NULL) {
+
+			// Spin wait while we get to the next timeStep
+			while(accumulator < HSTEP)
+			{	
+				curTime = time->GetTime();
+				accumulator += (curTime - lastTime)*time_scale;
+				lastTime = curTime;
+			}
+
+			// Remove an HSTEP from the accumulator since we've eaten it up
+			accumulator -= HSTEP;
+			
 			cur_frame = cur_frame->nextframe;
 			cur_frame->UpdateToFrame(*g_cloth);
 
-			/*S_frame.translation = g_base_frame.translation;
+			S_frame.translation = g_base_frame.translation;
 			S_frame.rotation = g_sky_camera.rotation;
 			O_frame = g_sky_camera;
 			inv_S_frame = S_frame.GetInverse();	
 
-			// work out what the O_frame is w.r.t eye coords (needed for GetScreenSpaceCircle)
-			rbt inv_eye = g_eye_matrix.GetInverse();
-			rbt modelview = g_base_frame * inv_eye;
-			// sent everything off to arcball function
-			arcball(modelview, O_frame, new_O_frame, S_frame, inv_S_frame, 
-			g_width, g_height, 900, 600, 899.6, 600, 2);
-			// translate the skycamera
-			g_sky_camera = new_O_frame;*/
+			// CARRY OUT THE O' = SQS^(-1)O ROUTINE
+			new_O_frame = S_frame * Q * inv_S_frame * O_frame;
+			g_sky_camera = new_O_frame;
 
 			glutPostRedisplay();
 			display();
 		}
+
+		delete time;
+
 		printf("\nAt end\n");
 				}
 				break;
@@ -458,9 +510,9 @@ void KeyFunc(unsigned char key, int x, int y)
 
 	case ('m'): {
 		int numberframes = 750;
-		double numberminutes = ((double)numberframes*(1.5 / 60.0));
-		printf("please wait, making a movie...\navg drawing time at 1 sec per frame:");
-		printf("%d minutes, %f seconds\n",(int)numberminutes, (numberminutes - (int)numberminutes)*60);
+		float fps = 60.0; // This is set by the codec usually --> Just trial and error it
+		float t_movie = 1.0 / fps;
+
 		BeginMovie(g_width, g_height, KSTRETCH, KDSTRETCH, KSHEAR, KDSHEAR, KBEND, 
 			KDBEND, HSTEP);
 
@@ -472,10 +524,38 @@ void KeyFunc(unsigned char key, int x, int y)
 		rbt S_frame;
 		rbt inv_S_frame;
 
+		// find the qrot (from class notes it is [0, v1].[0, v0] hence w = 0) and therefore the rbt Q
+		// This is to spin the ball around
+		qrot rot;
+		rbt Q;
+
+		// Axis angle to quaternion
+		//http://www.euclideanspace.com/maths/geometry/rotations/conversions/angleToQuaternion/index.htm
+		coords3 axis;
+		axis.x = 0.0; axis.y = 1.0; axis.z = 0.0;
+		float angle = (0.25/360.0)*(2.0*3.141596);
+		double mult = sin(angle / 2.0);
+
+		rot.x = axis.x * mult;
+		rot.y = axis.y * mult;
+		rot.z = axis.z * mult;
+		rot.w = cos(angle / 2.0);
+		// normalize the rotation
+		double mag = sqrt(rot.x*rot.x + rot.y*rot.y + rot.z*rot.z + rot.w*rot.w);
+		rot.x = rot.x / mag;
+		rot.y = rot.y / mag;
+		rot.z = rot.z / mag;
+		rot.w = rot.w / mag;
+		Q = rbt(rot);
+
+		float accumulator = 0.0f;
+
 		for (int i = 0; i < numberframes; i++)
 		{		
 			glReadPixels(0, 0, g_width, g_height, GL_BGRA, GL_UNSIGNED_BYTE, screendat);
 			UpdateMovie(g_width, g_height, screendat);
+
+			
 			TakeStep();
 
 			S_frame.translation = g_base_frame.translation;
@@ -483,15 +563,9 @@ void KeyFunc(unsigned char key, int x, int y)
 			O_frame = g_sky_camera;
 			inv_S_frame = S_frame.GetInverse();	
 
-			// work out what the O_frame is w.r.t eye coords (needed for GetScreenSpaceCircle)
-			rbt inv_eye = g_eye_matrix.GetInverse();
-			rbt modelview = g_base_frame * inv_eye;
-			// sent everything off to arcball function
-			arcball(modelview, O_frame, new_O_frame, S_frame, inv_S_frame, 
-				g_width, g_height, 512, 450, 511.7, 450, 2);
-			// translate the skycamera
+			// CARRY OUT THE O' = SQS^(-1)O ROUTINE
+			new_O_frame = S_frame * Q * inv_S_frame * O_frame;
 			g_sky_camera = new_O_frame;
-
 
 			display();  
 			printf("made frame %d of %d\n",i+1,numberframes);
@@ -535,7 +609,7 @@ void InitGLState(void)
 	// set up texture
 	glActiveTexture(GL_TEXTURE0);
 	int twidth, theight;
-	pixel *pixdata = ppmread("reachup.ppm", &twidth, &theight); // read in the texture (sqwirrle pick)
+	pixel *pixdata = ppmread("hipster_resized.ppm", &twidth, &theight); // read in the texture (sqwirrle pick)
 	g_twidth = twidth;
 	g_theight = theight;
 	glGenTextures(1, &h_texture);

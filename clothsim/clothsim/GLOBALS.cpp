@@ -38,8 +38,6 @@ const bool	SPHERECONTACT = false;
 
 const float	DELTAX_TOLLERENCE = (float)1e-1;
 const bool	EULERSTEP = false;
-const float	XNATLENGTH = 0.36;		/// the natural rest length of the cloth (same as g_size, ie at rest to start)
-const float	YNATLENGTH = 0.36;		/// same but in y direction
 const float	DIAGNATLENGTH = sqrt ((XNATLENGTH*XNATLENGTH)+(YNATLENGTH*YNATLENGTH));
 const float	BENDDIAGNATLENGTH = (2 * DIAGNATLENGTH);
 const float	KSTRETCH = 12000;		/// it should be large according to Baraff and Witkin 12k good value
@@ -50,14 +48,15 @@ const float	KDSHEAR = 600;			/// 0.6k is good value if kshear is 1k
 const float	KDBEND = 500;			/// 500 is a good value if kbend is 500
 const float	GRAVITY = 9.5;			/// As in: 9.8 m/s^2
 // HSTEP IS NOW DYNAMIC (ADAPTIVE) --> This is just a starting value
-float		HSTEP = 0.2;			/// The actual step size...  Keep it small (0.0085 default)
-const float	ERRORTOLERANCE = (float)1e-1;
+float		HSTEP = 0.008333;	    /// The actual step size...  Keep it small (120Hz)
+const float	ERRORTOLERANCE = (float)1e-3;
 
 static bool	reducehstep = false;
+const bool ADPATIVE_TIME_STEP = false; /// FOLLOW BARAFF AND WITKIN'S ALGORITHM FOR ADAPTIVE TIME STEP
 
 //// OPEN GL application globals
-int			g_width				= 1000;	/// screen width (previously 1680)
-int			g_height			= 700;	/// screen height  (previously 1050)
+int			g_width				= 960;	/// screen width (previously 1680)     --> This is youTube format for 16:9
+int			g_height			= 540;	/// screen height  (previously 1050)
 bool		g_left_clicked		= false;/// is the left mouse button down?
 bool		g_right_clicked		= false;/// is the right mouse button down?
 int			g_lclick_x, g_lclick_y;		/// coordinates for mouse click event
@@ -71,10 +70,14 @@ float		g_theight;
 bool		flooron = true;
 bool		g_block = false;
 
+
+// Cloth image hipster_resized.ppm is 512x640 (1:1.25)
 ////  CLOTH application globals (start sizes)
+const float	XNATLENGTH = 0.36;		/// the natural rest length of the cloth (same as g_size, ie at rest to start)
+const float	YNATLENGTH = 0.45;		/// same but in y direction
 cloth *		g_cloth;					/// this is the global cloth class instance
-int			g_clothlength = 8;			/// This is actually how many verticies are down each side (not its physical length)
-int			g_clothheight = 8;			/// 8 is a good value
+int			g_clothlength = 10;			/// This is actually how many verticies are down each side (not its physical length)
+int			g_clothheight = 10;			/// 8 is a good value
 int			g_mass = 3;					/// mass weight for unconstrained verticies
 float		g_XSize = XNATLENGTH;		/// length between each cloth vertex in world coordinates to start
 float		g_YSize = YNATLENGTH;

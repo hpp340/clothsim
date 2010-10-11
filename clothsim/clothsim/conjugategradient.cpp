@@ -21,7 +21,7 @@ void TakeStep(void) {
 			g_cloth->ConjugateGradient(ERRORTOLERANCE, HSTEP);
 	} while ( g_cloth->checkStep(numTries) ); // if it is unstable reduce Tstep and try again.
 
-	// Update the positions and velocities (ie, do a "linear step" in velocity)
+	// Update the positions and velocities (ie, do a "linear step" in velocity) --> Euler
 	*(g_cloth->VEL) += *(g_cloth->dv); // UPDATE VELOCITY
 	*(g_cloth->temp) = *g_cloth->Mult(*(g_cloth->VEL), HSTEP); // TEMP = VECOLICTY * TIMESTEP
 	*(g_cloth->POS) += *(g_cloth->temp); // UPDATE POSITION
@@ -39,37 +39,48 @@ void TakeStep(void) {
 }
 
 // NOTE: ACCORDING TO PAPER THIS SHOULD CHECK STRETCH DISPLACEMENT.  NOT JUST DELTA X.
-bool cloth::checkStep(int numTries) { // O(n) --> A little slow, but ok.
-	vector3d delX; // temporary variables
-	for(int index = 0; index < numberverticies; index++)
+bool cloth::checkStep(int numTries) // O(n) --> A little slow, but ok.
+{ 
+	if(ADPATIVE_TIME_STEP)
 	{
-		delX.x = (g_cloth->VEL->m_block[index].x + g_cloth->dv->m_block[index].x)*HSTEP; // x = (v0+delta_v).t
-		delX.y = (g_cloth->VEL->m_block[index].y + g_cloth->dv->m_block[index].y)*HSTEP;
-		delX.z = (g_cloth->VEL->m_block[index].z + g_cloth->dv->m_block[index].z)*HSTEP;
-		if(sqrt(delX.x*delX.x+delX.y*delX.y+delX.z+delX.z) > DELTAX_TOLLERENCE) // Detected potential instability!!
+		vector3d delX; // temporary variables
+		for(int index = 0; index < numberverticies; index++)
 		{
-			HSTEP /= 2;
-			if(numTries == 0 && g_cloth->hstep_increase_bound < 32 )
-				g_cloth->hstep_increase_bound *= 2;
-			g_cloth->stepTooLarge = true;
-			g_cloth->sucess = 0;
-			std::cout << "Reducing timestep by 1/2. HSTEP = " << HSTEP << "\n";
-			return 1;
+			delX.x = (g_cloth->VEL->m_block[index].x + g_cloth->dv->m_block[index].x)*HSTEP; // x = (v0+delta_v).t
+			delX.y = (g_cloth->VEL->m_block[index].y + g_cloth->dv->m_block[index].y)*HSTEP;
+			delX.z = (g_cloth->VEL->m_block[index].z + g_cloth->dv->m_block[index].z)*HSTEP;
+			if(sqrt(delX.x*delX.x+delX.y*delX.y+delX.z+delX.z) > DELTAX_TOLLERENCE) // Detected potential instability!!
+			{
+				HSTEP /= 2;
+				if(numTries == 0 && g_cloth->hstep_increase_bound < 32 )
+					g_cloth->hstep_increase_bound *= 2;
+				g_cloth->stepTooLarge = true;
+				g_cloth->sucess = 0;
+				std::cout << "Reducing timestep by 1/2. HSTEP = " << HSTEP << "\n";
+				return 1;
+			}
 		}
+		if(numTries == 0)
+			g_cloth->sucess ++;
+		if(sucess > g_cloth->hstep_increase_bound)
+		{
+			// check if there wasn't an error between the last increase.
+			if(g_cloth->stepTooLarge == false && g_cloth->hstep_increase_bound > 2)
+				g_cloth->hstep_increase_bound /= 2;
+			HSTEP = HSTEP*2;
+			g_cloth->sucess = 0;
+			g_cloth->stepTooLarge = false;
+			std::cout << "Increasing timestep by 2x. HSTEP = " << HSTEP << "\n";
+		}
+		return 0;
 	}
-	if(numTries == 0)
-		g_cloth->sucess ++;
-	if(sucess > g_cloth->hstep_increase_bound)
+	else
 	{
-		// check if there wasn't an error between the last increase.
-		if(g_cloth->stepTooLarge == false && g_cloth->hstep_increase_bound > 2)
-			g_cloth->hstep_increase_bound /= 2;
-		HSTEP = HSTEP*2;
+		// Assume the timestep was ok.
 		g_cloth->sucess = 0;
 		g_cloth->stepTooLarge = false;
-		std::cout << "Increasing timestep by 2x. HSTEP = " << HSTEP << "\n";
+		return 0;
 	}
-	return 0;
 }
 
 void cloth::Euler(float g_hstep)
@@ -129,8 +140,10 @@ void cloth::ConjugateGradient(float error, float g_hstep)
 	float delta_old;	// for later
 	// NEXT LINE TAKEN FROM HAMILTON'S CODE: looping maximum value that worked for Dean Macri is:
 	double no_iterations = 0;
-//	double max_iterations = 2*((double)sqrt((double)numberverticies)*3 + 3);
-	double max_iterations = 5*((double)sqrt((double)numberverticies)*3 + 3);
+	
+	// double max_iterations = 15*((double)sqrt((double)numberverticies)*3 + 3);
+
+	double max_iterations = 100*((double)sqrt((double)numberverticies)*3 + 3);
 
 	// STEP 7
 	while ((delta_new > (error*error*delta_not)) && (no_iterations < max_iterations)) {

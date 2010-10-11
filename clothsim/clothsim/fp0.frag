@@ -23,7 +23,7 @@ void main()
 {
 //   int drawcloth = (int)p_drawcloth; 
    
-   if(p_drawcloth > 0.5)
+   if(p_drawcloth >= 0.5)
    {
 		vec4 texColor0 = texture2D(texUnit0, pTexCoord);
 		vec3 texel;
