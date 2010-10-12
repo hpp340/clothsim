@@ -62,19 +62,18 @@ void  setMatrices(void)
 void drawStuff(void)
 {
 	// turn on cloth drawing and draw the cloth
-	glVertexAttrib1f(h_vMVIndex, 0.0);	
-	glVertexAttrib1f(h_drawcloth, 1.0);
+	glUniform1i(h_vMVIndex, 0);	
+	glUniform1i(h_drawcloth, 1);
 	g_cloth->DrawCloth(h_vTexCoord,g_block);
 
 	// turn off cloth drawing
-	glVertexAttrib1f(h_drawcloth, 0.0);
+	glUniform1i(h_drawcloth, 0);
 
 	if(flooron) {
 		// draw the floor
-		glVertexAttrib1f(h_vMVIndex, 0.0);
+		glUniform1i(h_vMVIndex, 0);
 		glNormal3f(0.0, 1.0, 0.0);
 		glBegin(GL_TRIANGLES);
-		glVertexAttrib1f(h_drawcloth, 0.0);
 		glVertexAttrib3f(h_vColor, 0.3, 0.7, 0.8);
 		glNormal3f(0.0, 1.0, 0.0);
 		glVertex3f(-FLOOR_SIZE, FLOOR_Y, -FLOOR_SIZE);
@@ -93,14 +92,14 @@ void drawStuff(void)
 	}
 
 	//draw arcball in center of world if we need it
-	glVertexAttrib1f(h_vMVIndex, 0.0);
+	glUniform1i(h_vMVIndex, 0);
 	glVertexAttrib3f(h_vColor, 0.5, 0.5, 0.5);
 	if(g_drawball) {
 		glutWireSphere(1.8, 25, 25);
 	}
 
 	if(DRAWSPHERE) {
-		glVertexAttrib1f(h_vMVIndex, 1.0);
+		glUniform1i(h_vMVIndex, 1);
 		glNormal3f(0.0, 1.0, 0.0);
 		glutWireSphere(SPHERERADIUS-0.03, 25, 25);
 	}
@@ -405,7 +404,7 @@ void KeyFunc(unsigned char key, int x, int y)
 		//http://www.euclideanspace.com/maths/geometry/rotations/conversions/angleToQuaternion/index.htm
 		coords3 axis;
 		axis.x = 0.0; axis.y = 1.0; axis.z = 0.0;
-		float angle = (0.25/360.0)*(2.0*3.141596);
+		float angle = HSTEP * (360.0/360.0)*(2.0*3.141596);
 		double mult = sin(angle / 2.0);
 
 		rot.x = axis.x * mult;
@@ -425,7 +424,7 @@ void KeyFunc(unsigned char key, int x, int y)
 		while(cur_frame->nextframe != NULL) {
 
 			// Spin wait while we get to the next timeStep
-			while(accumulator < HSTEP)
+			while(accumulator <= HSTEP)
 			{	
 				curTime = time->GetTime();
 				accumulator += (curTime - lastTime)*time_scale;
@@ -533,7 +532,7 @@ void KeyFunc(unsigned char key, int x, int y)
 		//http://www.euclideanspace.com/maths/geometry/rotations/conversions/angleToQuaternion/index.htm
 		coords3 axis;
 		axis.x = 0.0; axis.y = 1.0; axis.z = 0.0;
-		float angle = (0.25/360.0)*(2.0*3.141596);
+		float angle = HSTEP * (10.0/360.0)*(2.0*3.141596);
 		double mult = sin(angle / 2.0);
 
 		rot.x = axis.x * mult;
@@ -549,25 +548,34 @@ void KeyFunc(unsigned char key, int x, int y)
 		Q = rbt(rot);
 
 		float accumulator = 0.0f;
+		float movie_FPS = 60.0f; // Match the FPS of the movie codec.  This is a magic number...  Make the movie, look at the FPS and adjust this.
+		float movie_Tstep = 1.0f / movie_FPS;
 
 		for (int i = 0; i < numberframes; i++)
-		{		
+		{	
 			glReadPixels(0, 0, g_width, g_height, GL_BGRA, GL_UNSIGNED_BYTE, screendat);
 			UpdateMovie(g_width, g_height, screendat);
 
-			
-			TakeStep();
+			while((accumulator - movie_Tstep) < -EPSILON)
+			{
+				TakeStep();
+				accumulator += HSTEP;
 
-			S_frame.translation = g_base_frame.translation;
-			S_frame.rotation = g_sky_camera.rotation;
-			O_frame = g_sky_camera;
-			inv_S_frame = S_frame.GetInverse();	
+				S_frame.translation = g_base_frame.translation;
+				S_frame.rotation = g_sky_camera.rotation;
+				O_frame = g_sky_camera;
+				inv_S_frame = S_frame.GetInverse();	
 
-			// CARRY OUT THE O' = SQS^(-1)O ROUTINE
-			new_O_frame = S_frame * Q * inv_S_frame * O_frame;
-			g_sky_camera = new_O_frame;
+				// CARRY OUT THE O' = SQS^(-1)O ROUTINE
+				new_O_frame = S_frame * Q * inv_S_frame * O_frame;
+				g_sky_camera = new_O_frame;
 
-			display();  
+				glutPostRedisplay();
+				display();  
+				
+			}
+
+			accumulator = 0.0f;
 			printf("made frame %d of %d\n",i+1,numberframes);
 		}
 		EndMovie();
@@ -637,9 +645,16 @@ int InitGLHandles(void) {
 	{ fprintf(stderr, "Error getting uLight variable\n"); return 1; }
 	if ((h_vColor = glGetAttribLocation(h_program, "vColor"))<0)
 	{ fprintf(stderr, "Error getting vColor variable\n"); return 1; }
-	if ((h_drawcloth = glGetAttribLocation(h_program, "v_drawcloth"))<0)
+	//if ((h_drawcloth = glGetAttribLocation(h_program, "v_drawcloth"))<0)
+	//{ fprintf(stderr, "Error getting v_drawcloth variable\n"); return 1; }
+	//if ((h_vMVIndex = glGetAttribLocation(h_program, "vMVIndex"))<0)
+	//{ fprintf(stderr, "Error getting v_drawcloth variable\n"); return 1; }
+
+	// CHANGE - OCTOBER 2010
+	if ((h_drawcloth = glGetUniformLocation(h_program, "uDrawCloth"))<0)
+	{ fprintf(stderr, "Error getting udrawCloth variable\n"); return 1; }
+	if ((h_vMVIndex = glGetUniformLocation(h_program, "vMVIndex"))<0)
 	{ fprintf(stderr, "Error getting v_drawcloth variable\n"); return 1; }
-	if ((h_vMVIndex = glGetAttribLocation(h_program, "vMVIndex"))<0)
-	{ fprintf(stderr, "Error getting v_drawcloth variable\n"); return 1; }
+
 	return 0;
 }

@@ -142,9 +142,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies=".\Glew_and_Glut_files\glut32.lib opengl32.lib .\Glew_and_Glut_files\glew32.lib Vfw32.lib"
+				OutputFile="$(IntDir)\$(ProjectName).exe"
 				LinkIncremental="1"
 				IgnoreDefaultLibraryNames="libc.lib"
 				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(IntDir)\$(TargetName).pdb"
 				SubSystem="1"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"

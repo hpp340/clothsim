@@ -50,6 +50,7 @@ extern const float	KDBEND;
 extern const float	GRAVITY;			
 extern float		HSTEP; // HSTEP IS NOW DYNAMIC (ADAPTIVE)
 extern const float	ERRORTOLERANCE;
+extern const float  EPSILON;
 extern const bool   ADPATIVE_TIME_STEP;
 extern bool			reducehstep;
 extern int			g_width;

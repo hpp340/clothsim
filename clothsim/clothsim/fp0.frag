@@ -6,11 +6,11 @@
 
 uniform vec3 uLight;
 
+uniform int uDrawCloth;
+
 uniform float uTw;
 uniform float uTh;
 uniform sampler2D texUnit0;
-
-varying float p_drawcloth;
 
 varying vec2  pTexCoord;		// texture coordinates
 
@@ -21,9 +21,8 @@ varying vec3 pColor;
 
 void main()
 {
-//   int drawcloth = (int)p_drawcloth; 
    
-   if(p_drawcloth >= 0.5)
+   if(uDrawCloth == 1)
    {
 		vec4 texColor0 = texture2D(texUnit0, pTexCoord);
 		vec3 texel;

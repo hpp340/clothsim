@@ -9,29 +9,27 @@ uniform mat4 uNormalMatrix[27];
 
 attribute vec3 vColor;
 
-attribute float vMVIndex;
+uniform int vMVIndex;
 
 attribute vec2 vTexCoord;		// texture coordinate
 
 varying vec2  pTexCoord;		// texture coordinates
 varying vec3 pColor;
 
-attribute float v_drawcloth;
-varying float p_drawcloth;
-
 varying vec4 pPosition;
 varying vec3 pNormal;
+
+int index;
 
 void main()
 {
   pTexCoord = vTexCoord;
   pColor = vColor;
-  p_drawcloth = v_drawcloth;
  
   vec4 normal = vec4(gl_Normal.x, gl_Normal.y, gl_Normal.z, 1.0);
-  pNormal = vec3(uNormalMatrix[int(vMVIndex)] * normal);
+  pNormal = vec3(uNormalMatrix[vMVIndex] * normal);
   
-  pPosition = uModelViewMatrix[int(vMVIndex)] * gl_Vertex;
+  pPosition = uModelViewMatrix[vMVIndex] * gl_Vertex;
   gl_Position = uProjMatrix * pPosition;
   
 }

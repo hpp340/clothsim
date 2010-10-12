@@ -29,27 +29,21 @@ const float	FLOOR_SIZE = 5.0;		/// half the floor length
 const int	NUM_SHADERS = 1;
 const int	NUM_CLOTHS = 1;
 
-const float	SPHERE_X = 0;
-const float	SPHERE_Y = -1.0;
+const float	SPHERE_X = -1;
+const float	SPHERE_Y = -1;
 const float	SPHERE_Z = 0;
-const float	SPHERERADIUS = 0.75;
-const bool	DRAWSPHERE = false;
-const bool	SPHERECONTACT = false;
+const float	SPHERERADIUS = 1;
+const bool	DRAWSPHERE = true;
+const bool	SPHERECONTACT = true;
 
 const float	DELTAX_TOLLERENCE = (float)1e-1;
 const bool	EULERSTEP = false;
 const float	DIAGNATLENGTH = sqrt ((XNATLENGTH*XNATLENGTH)+(YNATLENGTH*YNATLENGTH));
 const float	BENDDIAGNATLENGTH = (2 * DIAGNATLENGTH);
-const float	KSTRETCH = 12000;		/// it should be large according to Baraff and Witkin 12k good value
-const float	KSHEAR = 1000;			/// 1k is a good value
-const float	KBEND = 500;			/// 500 is a good value
-const float	KDSTRETCH = 1000;		/// dampening 1k is a good value if kstretch is 12k
-const float	KDSHEAR = 600;			/// 0.6k is good value if kshear is 1k
-const float	KDBEND = 500;			/// 500 is a good value if kbend is 500
 const float	GRAVITY = 9.5;			/// As in: 9.8 m/s^2
 // HSTEP IS NOW DYNAMIC (ADAPTIVE) --> This is just a starting value
-float		HSTEP = 0.008333;	    /// The actual step size...  Keep it small (120Hz)
-const float	ERRORTOLERANCE = (float)1e-3;
+const float	ERRORTOLERANCE = (float)1e-5;
+const float EPSILON = 0.00000001f;
 
 static bool	reducehstep = false;
 const bool ADPATIVE_TIME_STEP = false; /// FOLLOW BARAFF AND WITKIN'S ALGORITHM FOR ADAPTIVE TIME STEP
@@ -73,11 +67,36 @@ bool		g_block = false;
 
 // Cloth image hipster_resized.ppm is 512x640 (1:1.25)
 ////  CLOTH application globals (start sizes)
-const float	XNATLENGTH = 0.36;		/// the natural rest length of the cloth (same as g_size, ie at rest to start)
-const float	YNATLENGTH = 0.45;		/// same but in y direction
+//// NORMAL SIZE --> GOOD FOR SIMULATIONS NOT USING SPHERE
+//float		HSTEP = 0.0083333333333;/// The actual step size...  Keep it small (120Hz)
+//const float	XNATLENGTH = 0.36;		/// the natural rest length of the cloth (same as g_size, ie at rest to start)
+//const float	YNATLENGTH = 0.45;		/// same but in y direction
+//int			g_clothlength = 20;			/// This is actually how many verticies are down each side (not its physical length)
+//int			g_clothheight = 20;			/// 8 is a good value
+//const float	KSTRETCH = 12000;		/// it should be large according to Baraff and Witkin 12k good value
+//const float	KSHEAR = 1000;			/// 1k is a good value
+//const float	KBEND = 500;			/// 500 is a good value
+//const float	KDSTRETCH = 1000;		/// dampening 1k is a good value if kstretch is 12k
+//const float	KDSHEAR = 600;			/// 0.6k is good value if kshear is 1k
+//const float	KDBEND = 500;			/// 500 is a good value if kbend is 500
+
+// 2 X DENSITY --> GOOD FOR SIMULATIONS USING SPHERE
+float		HSTEP = 8.333333333e-4;/// The actual step size...  Keep it small (120kHz!!)
+const float	XNATLENGTH = 0.18;		/// the natural rest length of the cloth (same as g_size, ie at rest to start)
+const float	YNATLENGTH = 0.225;		/// same but in y direction
+int			g_clothlength = 20;			/// This is actually how many verticies are down each side (not its physical length)
+int			g_clothheight = 20;			/// 8 is a good value
+const float	KSTRETCH = 12000;		/// it should be large according to Baraff and Witkin 12k good value
+const float	KSHEAR = 1000;			/// 1k is a good value
+const float	KBEND = 500;			/// 500 is a good value
+const float	KDSTRETCH = 1000;		/// dampening 1k is a good value if kstretch is 12k
+const float	KDSHEAR = 600;			/// 0.6k is good value if kshear is 1k
+const float	KDBEND = 500;			/// 500 is a good value if kbend is 500
+
+
+
 cloth *		g_cloth;					/// this is the global cloth class instance
-int			g_clothlength = 10;			/// This is actually how many verticies are down each side (not its physical length)
-int			g_clothheight = 10;			/// 8 is a good value
+
 int			g_mass = 3;					/// mass weight for unconstrained verticies
 float		g_XSize = XNATLENGTH;		/// length between each cloth vertex in world coordinates to start
 float		g_YSize = YNATLENGTH;
