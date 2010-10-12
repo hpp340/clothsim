@@ -53,7 +53,7 @@ void SymMatrixBlocks::MakeTemp(void) {
 	temp->m_matBlock.clear();
 	temp->m_bAllZero = true;
 
-	i = m_matBlock.size();
+	i = (int)m_matBlock.size();
 
 	if (temp->tempmatblock == NULL) {
 		temp->tempmatblock = new Matrix3x3[m_matBlock.size()];			// make a new (fresh) memory block 

@@ -400,11 +400,14 @@ void KeyFunc(unsigned char key, int x, int y)
 		qrot rot;
 		rbt Q;
 
+		float T_FPS = 1.0 / 60.0;
+		float FPSaccumulator = 0.0;
+
 		// Axis angle to quaternion
 		//http://www.euclideanspace.com/maths/geometry/rotations/conversions/angleToQuaternion/index.htm
 		coords3 axis;
 		axis.x = 0.0; axis.y = 1.0; axis.z = 0.0;
-		float angle = HSTEP * (360.0/360.0)*(2.0*3.141596);
+		float angle = T_FPS * (45.0/360.0)*(2.0*3.141596); // (rad / sec) * (sec / frame) = rad / frame
 		double mult = sin(angle / 2.0);
 
 		rot.x = axis.x * mult;
@@ -419,22 +422,28 @@ void KeyFunc(unsigned char key, int x, int y)
 		rot.w = rot.w / mag;
 		Q = rbt(rot);
 
-		float time_scale = 1.0f; // slow down the time a little bit
-
 		while(cur_frame->nextframe != NULL) {
 
-			// Spin wait while we get to the next timeStep
-			while(accumulator <= HSTEP)
-			{	
-				curTime = time->GetTime();
-				accumulator += (curTime - lastTime)*time_scale;
-				lastTime = curTime;
+			// Only update the current cloth frame to the display every T_FPS
+			while( FPSaccumulator <= T_FPS && cur_frame->nextframe != NULL)
+			{
+				// Spin wait while we get to the next timeStep
+				while(accumulator <= HSTEP)
+				{	
+					curTime = time->GetTime();
+					accumulator += curTime - lastTime;
+					lastTime = curTime;
+				}
+				// Step to the next frame
+				cur_frame = cur_frame->nextframe;
+
+				// Remove an HSTEP from the accumulator since we've eaten it up
+				accumulator -= HSTEP;
+				FPSaccumulator += HSTEP;
 			}
 
-			// Remove an HSTEP from the accumulator since we've eaten it up
-			accumulator -= HSTEP;
-			
-			cur_frame = cur_frame->nextframe;
+			FPSaccumulator -= T_FPS;
+
 			cur_frame->UpdateToFrame(*g_cloth);
 
 			S_frame.translation = g_base_frame.translation;
@@ -476,10 +485,10 @@ void KeyFunc(unsigned char key, int x, int y)
 				}
 				break;
 	case ('a'): {
-		int numberframes = 150;
-		double numberminutes = ((double)numberframes*(1.5 / 60.0));
-		printf("please wait, drawing frames...\navg drawing time at 1.5 sec per frame:");
-		printf("%d minutes, %f seconds\n",(int)numberminutes, (numberminutes - (int)numberminutes)*60);
+
+		float time = 0.5;
+		int numberframes = time / HSTEP;
+
 		// go to the last frame
 		while(cur_frame->nextframe != NULL) {
 			cur_frame = cur_frame->nextframe;
@@ -500,21 +509,107 @@ void KeyFunc(unsigned char key, int x, int y)
 			cur_frame->nextframe = temp;
 			temp->lastframe = cur_frame;
 			cur_frame = temp;
-			printf("made frame %d of %d\n",i+1,numberframes);
+			printf("made frame %fsec of %fsec\n",((float)(i+1))*HSTEP,((float)numberframes)*HSTEP);
 			display();
 		}
-		printf("%d frames made sucessfully!!\n",numberframes);
+		printf("%fsec of frames made sucessfully!!\n",((float)numberframes)*HSTEP);
 				}
 				break;
 
 	case ('m'): {
-		int numberframes = 750;
-		float fps = 60.0; // This is set by the codec usually --> Just trial and error it
-		float t_movie = 1.0 / fps;
+		while(cur_frame->lastframe != NULL) { // Go to the start of the list
+			cur_frame = cur_frame->lastframe;
+		}
+		printf("\nAt start\n");
+		cur_frame->UpdateToFrame(*g_cloth);
 
 		BeginMovie(g_width, g_height, KSTRETCH, KDSTRETCH, KSHEAR, KDSHEAR, KBEND, 
 			KDBEND, HSTEP);
+		unsigned char *screendat = new unsigned char[g_width * g_width*100];	
 
+		glutPostRedisplay();
+		display();
+		//glReadPixels(0, 0, g_width, g_height, GL_BGRA, GL_UNSIGNED_BYTE, screendat);
+		//UpdateMovie(g_width, g_height, screendat);
+
+		// do an arc ball routine to make it look nice
+		rbt new_O_frame;
+		rbt O_frame;
+		rbt S_frame;
+		rbt inv_S_frame;
+
+		// find the qrot (from class notes it is [0, v1].[0, v0] hence w = 0) and therefore the rbt Q
+		// This is to spin the ball around
+		qrot rot;
+		rbt Q;
+
+		float T_FPS = 1.0 / 60.0; // trial an error to find movie FPS
+		int numHSTEP_per_T_PFS = (int)(T_FPS / HSTEP  + EPSILON);
+		if((T_FPS / HSTEP - (float)numHSTEP_per_T_PFS) > 0.001f)
+			throw std::exception("movie fps is not an integer multiple of HSTEP");
+
+		// Axis angle to quaternion
+		//http://www.euclideanspace.com/maths/geometry/rotations/conversions/angleToQuaternion/index.htm
+		coords3 axis;
+		axis.x = 0.0; axis.y = 1.0; axis.z = 0.0;
+		float angle = T_FPS * (45.0/360.0)*(2.0*3.141596); // (rad / sec) * (sec / frame) = rad / frame
+		double mult = sin(angle / 2.0);
+
+		rot.x = axis.x * mult;
+		rot.y = axis.y * mult;
+		rot.z = axis.z * mult;
+		rot.w = cos(angle / 2.0);
+		// normalize the rotation
+		double mag = sqrt(rot.x*rot.x + rot.y*rot.y + rot.z*rot.z + rot.w*rot.w);
+		rot.x = rot.x / mag;
+		rot.y = rot.y / mag;
+		rot.z = rot.z / mag;
+		rot.w = rot.w / mag;
+		Q = rbt(rot);
+
+		while(cur_frame->nextframe != NULL) {
+
+			// Only update the current cloth frame to the display every T_FPS
+			int frameSkip = 0;
+			while( frameSkip < numHSTEP_per_T_PFS && cur_frame->nextframe != NULL)
+			{
+				// Step to the next frame
+				cur_frame = cur_frame->nextframe;
+				frameSkip += 1;
+			}
+
+			cur_frame->UpdateToFrame(*g_cloth);
+
+			S_frame.translation = g_base_frame.translation;
+			S_frame.rotation = g_sky_camera.rotation;
+			O_frame = g_sky_camera;
+			inv_S_frame = S_frame.GetInverse();	
+
+			// CARRY OUT THE O' = SQS^(-1)O ROUTINE
+			new_O_frame = S_frame * Q * inv_S_frame * O_frame;
+			g_sky_camera = new_O_frame;
+
+			glutPostRedisplay();
+			display();
+			glReadPixels(0, 0, g_width, g_height, GL_BGRA, GL_UNSIGNED_BYTE, screendat);
+			UpdateMovie(g_width, g_height, screendat);
+		}
+
+		EndMovie();
+		delete [] screendat;
+
+		printf("movie finished \n");
+		printf("\nAt end\n");
+
+		/*
+		float fps = 60.0; // This is set by the codec usually --> Just trial and error it
+		float t_movie = 1.0 / fps;
+
+		float movieTime = 3;
+		int numberframes = (int)(movieTime / t_movie);
+
+		BeginMovie(g_width, g_height, KSTRETCH, KDSTRETCH, KSHEAR, KDSHEAR, KBEND, 
+			KDBEND, HSTEP);
 		unsigned char *screendat = new unsigned char[g_width * g_width*100];	
 
 		// do an arc ball routine to make it look nice
@@ -582,6 +677,8 @@ void KeyFunc(unsigned char key, int x, int y)
 		printf("movie finished \n");
 		glutPostRedisplay();	
 		delete [] screendat;
+				}
+				*/
 				}
 				break;		
 	}

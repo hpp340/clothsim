@@ -147,7 +147,7 @@ ppmread(const char *filename, int *width, int *height)
         int row;
 
 	for (row = ((*height) - 1); row >= 0; row--) {
-	  l = fread(&rv[row * (*width)], 1,
+	  l = (int)fread(&rv[row * (*width)], 1,
 		    ((*width) * sizeof(pixel)), f);
 
 	  if (l<0) {
