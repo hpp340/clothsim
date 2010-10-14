@@ -17,6 +17,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 // I N C L U D E S    &    G L O B A L S ///////////////////////////////////////
+
 #include "stdafx.h"
 #include "GLOBALS.h"
 
@@ -106,6 +107,14 @@ void runSimulation(void) {
 
 int main(int argc, char **argv) 
 {  
+
+	#ifdef _DEBUG
+	#ifdef _CHECK_MEMORY
+	_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF | _CRTDBG_CHECK_ALWAYS_DF);
+	//	_CrtDumpMemoryLeaks(); (gives false dumps)
+	#endif
+	#endif
+
 	string answer;
 	initGlutState(argc,argv);
 

@@ -1,22 +1,5 @@
-#include "stdafx.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <glew.h>
-#include <glut.h>
-#include "matrix4.h"
-#include "shader.h"
-#include "coords3.h"
-#include "cloth.h"
-#include "MathTypes.h"
-#include "ppmio.h"
-#include "arcball.h"
-#include "conjugategradient.h"
-#include "frame.h"
-#include "videocode.h"
+
 #include "GLOBALS.h"
-#include <iostream>
-#include <string>
-#include "glFuncs.h"
 
 // G L O B A L S ///////////////////////////////////////////////////////
 
@@ -63,37 +46,37 @@ bool		g_block = false;
 
 // Cloth image hipster_resized.ppm is 512x640 (1:1.25)
 ////  CLOTH application globals (start sizes)
-// SIMULATION 1 --> FREE FALL FROM CORNER VERTICIES
-float		HSTEP = 0.0083333333333;/// The actual step size...  Keep it small (120Hz)
-const float	XNATLENGTH = 0.36;		/// the natural rest length of the cloth (same as g_size, ie at rest to start)
-const float	YNATLENGTH = 0.45;		/// same but in y direction
-int			g_clothlength = 10;			/// This is actually how many verticies are down each side (not its physical length)
-int			g_clothheight = 10;			/// 8 is a good value
-const float	KSTRETCH = 12000;		/// it should be large according to Baraff and Witkin 12k good value
-const float	KSHEAR = 1000;			/// 1k is a good value
-const float	KBEND = 500;			/// 500 is a good value
-const float	KDSTRETCH = 1000;		/// dampening 1k is a good value if kstretch is 12k
-const float	KDSHEAR = 600;			/// 0.6k is good value if kshear is 1k
-const float	KDBEND = 500;			/// 500 is a good value if kbend is 500
-const float	ERRORTOLERANCE = (float)1e-5;
-const bool	DRAWSPHERE = false;
-const bool	SPHERECONTACT = false;
-
-//// SIMULATION 2 --> COLLISION WHITH SPHERE
-//float		HSTEP = 8.333333333e-5;/// The actual step size...  Keep it small (1.2kHz!!)
+//// SIMULATION 1 --> FREE FALL FROM CORNER VERTICIES
+//float		HSTEP = 0.0083333333333;/// The actual step size...  120Hz MUST BE AN INTEGER MULTIPLE OF 60HZ
 //const float	XNATLENGTH = 0.36;		/// the natural rest length of the cloth (same as g_size, ie at rest to start)
 //const float	YNATLENGTH = 0.45;		/// same but in y direction
 //int			g_clothlength = 10;			/// This is actually how many verticies are down each side (not its physical length)
 //int			g_clothheight = 10;			/// 8 is a good value
-//const float	KSTRETCH = 6000;		/// it should be large according to Baraff and Witkin 12k good value
+//const float	KSTRETCH = 12000;		/// it should be large according to Baraff and Witkin 12k good value
 //const float	KSHEAR = 1000;			/// 1k is a good value
 //const float	KBEND = 500;			/// 500 is a good value
 //const float	KDSTRETCH = 1000;		/// dampening 1k is a good value if kstretch is 12k
 //const float	KDSHEAR = 600;			/// 0.6k is good value if kshear is 1k
 //const float	KDBEND = 500;			/// 500 is a good value if kbend is 500
-//const float	ERRORTOLERANCE = (float)1e-4;
-//const bool	DRAWSPHERE = true;
-//const bool	SPHERECONTACT = true;
+//const float	ERRORTOLERANCE = (float)1e-5;
+//const bool	DRAWSPHERE = false;
+//const bool	SPHERECONTACT = false;
+
+// SIMULATION 2 --> COLLISION WHITH SPHERE
+float		HSTEP = 2.083333333e-4; /// The actual step size...  4.8kHz.  MUST BE AN INTEGER MULTIPLE OF 60HZ
+const float	XNATLENGTH = 0.36;		/// the natural rest length of the cloth (same as g_size, ie at rest to start)
+const float	YNATLENGTH = 0.45;		/// same but in y direction
+int			g_clothlength = 10;			/// This is actually how many verticies are down each side (not its physical length)
+int			g_clothheight = 10;			/// 8 is a good value
+const float	KSTRETCH = 6000;		/// it should be large according to Baraff and Witkin 12k good value
+const float	KSHEAR = 1000;			/// 1k is a good value
+const float	KBEND = 500;			/// 500 is a good value
+const float	KDSTRETCH = 500;		/// dampening 1k is a good value if kstretch is 12k
+const float	KDSHEAR = 600;			/// 0.6k is good value if kshear is 1k
+const float	KDBEND = 500;			/// 500 is a good value if kbend is 500
+const float	ERRORTOLERANCE = (float)1e-4;
+const bool	DRAWSPHERE = true;
+const bool	SPHERECONTACT = true;
 
 cloth *		g_cloth;					/// this is the global cloth class instance
 

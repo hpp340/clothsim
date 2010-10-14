@@ -401,7 +401,6 @@ void KeyFunc(unsigned char key, int x, int y)
 		rbt Q;
 
 		float T_FPS = 1.0 / 60.0;
-		float FPSaccumulator = 0.0;
 
 		// Axis angle to quaternion
 		//http://www.euclideanspace.com/maths/geometry/rotations/conversions/angleToQuaternion/index.htm
@@ -424,26 +423,20 @@ void KeyFunc(unsigned char key, int x, int y)
 
 		while(cur_frame->nextframe != NULL) {
 
-			// Only update the current cloth frame to the display every T_FPS
-			while( FPSaccumulator <= T_FPS && cur_frame->nextframe != NULL)
-			{
-				// Spin wait while we get to the next timeStep
-				while(accumulator <= HSTEP)
-				{	
-					curTime = time->GetTime();
-					accumulator += curTime - lastTime;
-					lastTime = curTime;
-				}
-				// Step to the next frame
-				cur_frame = cur_frame->nextframe;
-
-				// Remove an HSTEP from the accumulator since we've eaten it up
-				accumulator -= HSTEP;
-				FPSaccumulator += HSTEP;
+			// Spin wait while we get to the next timeStep
+			while(accumulator <= T_FPS)
+			{	
+				curTime = time->GetTime();
+				accumulator += curTime - lastTime;
+				lastTime = curTime;
 			}
+			// Step to the next frame
+			cur_frame = cur_frame->nextframe;
 
-			FPSaccumulator -= T_FPS;
+			// Remove an HSTEP from the accumulator since we've eaten it up
+			accumulator -= T_FPS;
 
+			cur_frame = cur_frame->nextframe;
 			cur_frame->UpdateToFrame(*g_cloth);
 
 			S_frame.translation = g_base_frame.translation;
@@ -486,8 +479,14 @@ void KeyFunc(unsigned char key, int x, int y)
 				break;
 	case ('a'): {
 
-		float time = 0.5;
-		int numberframes = time / HSTEP;
+		float time =  0.5;
+
+		float FPS = 60;
+		float t_FPS = 1.0/60.0;
+		int frameSkip = (int)((t_FPS / HSTEP) + 0.00001f); // Don't save every frame to the linked-list --> Waste of memory
+		if(abs(frameSkip - t_FPS / HSTEP) > 0.0001f)
+			throw std::exception("t_FPS is not an integer multiple of HSTEP");
+		int numberframes = (int)(time / t_FPS + 0.00001f);
 
 		// go to the last frame
 		while(cur_frame->nextframe != NULL) {
@@ -496,11 +495,9 @@ void KeyFunc(unsigned char key, int x, int y)
 		cur_frame->UpdateToFrame(*g_cloth);
 
 		for (int i = 0; i<numberframes; i++) {
-			TakeStep();
-			// go to the end of the frames
-			while(cur_frame->nextframe != NULL) {
-				cur_frame = cur_frame->nextframe;
-			}
+
+			for(int j = 0; j < frameSkip; j ++)
+				TakeStep();
 
 			// get the next frame and add it to the end of the list of frames
 			frame * temp;
@@ -509,12 +506,12 @@ void KeyFunc(unsigned char key, int x, int y)
 			cur_frame->nextframe = temp;
 			temp->lastframe = cur_frame;
 			cur_frame = temp;
-			printf("made frame %fsec of %fsec\n",((float)(i+1))*HSTEP,((float)numberframes)*HSTEP);
+			printf("made frame %fsec of %fsec\n",((float)(i+1))*t_FPS,((float)numberframes)*t_FPS);
 			display();
 		}
-		printf("%fsec of frames made sucessfully!!\n",((float)numberframes)*HSTEP);
-				}
-				break;
+		printf("%fsec of frames made sucessfully!!\n",((float)numberframes)*t_FPS);
+		}
+		break;
 
 	case ('m'): {
 		while(cur_frame->lastframe != NULL) { // Go to the start of the list
@@ -529,8 +526,8 @@ void KeyFunc(unsigned char key, int x, int y)
 
 		glutPostRedisplay();
 		display();
-		//glReadPixels(0, 0, g_width, g_height, GL_BGRA, GL_UNSIGNED_BYTE, screendat);
-		//UpdateMovie(g_width, g_height, screendat);
+		glReadPixels(0, 0, g_width, g_height, GL_BGRA, GL_UNSIGNED_BYTE, screendat);
+		UpdateMovie(g_width, g_height, screendat);
 
 		// do an arc ball routine to make it look nice
 		rbt new_O_frame;
@@ -544,9 +541,6 @@ void KeyFunc(unsigned char key, int x, int y)
 		rbt Q;
 
 		float T_FPS = 1.0 / 60.0; // trial an error to find movie FPS
-		int numHSTEP_per_T_PFS = (int)(T_FPS / HSTEP  + EPSILON);
-		if((T_FPS / HSTEP - (float)numHSTEP_per_T_PFS) > 0.001f)
-			throw std::exception("movie fps is not an integer multiple of HSTEP");
 
 		// Axis angle to quaternion
 		//http://www.euclideanspace.com/maths/geometry/rotations/conversions/angleToQuaternion/index.htm
@@ -568,16 +562,7 @@ void KeyFunc(unsigned char key, int x, int y)
 		Q = rbt(rot);
 
 		while(cur_frame->nextframe != NULL) {
-
-			// Only update the current cloth frame to the display every T_FPS
-			int frameSkip = 0;
-			while( frameSkip < numHSTEP_per_T_PFS && cur_frame->nextframe != NULL)
-			{
-				// Step to the next frame
-				cur_frame = cur_frame->nextframe;
-				frameSkip += 1;
-			}
-
+			cur_frame = cur_frame->nextframe;
 			cur_frame->UpdateToFrame(*g_cloth);
 
 			S_frame.translation = g_base_frame.translation;

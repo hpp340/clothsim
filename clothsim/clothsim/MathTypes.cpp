@@ -339,7 +339,12 @@ DiagonalMatrix& DiagonalMatrix::operator=( const DiagonalMatrix &src )
 void DiagonalMatrix::Zero()
 {
 	if( m_iSize && m_block )
-		memset( m_block, 0, m_iSize * sizeof( vector3d ) );
+	{
+		// memset caused memory leaks!!
+		//memset( m_block, 0, m_iSize * sizeof( vector3d ) );
+		for(int i = 0; i < m_iSize; i ++)
+		{ m_block[i].x = 0.0; m_block[i].y = 0.0; m_block[i].z = 0.0; }
+	}
 }
 
 DiagonalMatrix& DiagonalMatrix::operator+=( const DiagonalMatrix &src )

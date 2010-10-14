@@ -98,7 +98,12 @@ void cloth::ConjugateGradient(float error, float g_hstep)
 	//}
 
 	// Set up A = (M - h*df/dv - h^2 * df/dx)  EQUATION 15
-	*symblocktemp = *Sub(*SMASS, *(Mult(hstep, (*TOTALdf_dv))));
+
+
+	*symblocktemp = *Sub(*SMASS, *(Mult(hstep, (*TOTALdf_dv)))); // CAUSED MEMORY LEAKS!!
+	//Mult(*symblocktemp2,hstep,*TOTALdf_dv); 
+	//Sub(*symblocktemp,*SMASS,*symblocktemp2);
+
 	(*A) = *Sub(*symblocktemp, *(Mult((hstep * hstep), (*TOTALdf_dx))));
 
 	// Set up b = h * (FORCE + df/dx * (y + (h * VELOCITY)))  EQUATION 15

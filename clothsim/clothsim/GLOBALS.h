@@ -1,9 +1,22 @@
-//#ifndef GLOBAL_H // header guards
-//#define GLOBAL_H
+#ifndef GLOBAL_H // header guards
+#define GLOBAL_H
+
+#ifdef _DEBUG
+#ifdef _CHECK_MEMORY
+#define _CRTDBG_MAP_ALLOC  // Give report on memory leaks
+#endif
+#endif
+
+#include <stdlib.h>
+
+#ifdef _DEBUG
+#ifdef _CHECK_MEMORY
+#include <crtdbg.h> // Map memory allocations
+#endif
+#endif
 
 #include "stdafx.h"
 #include <stdio.h>
-#include <stdlib.h>
 #include <glew.h>
 #include <glut.h>
 #include "matrix4.h"
@@ -92,4 +105,4 @@ extern GLint		h_drawcloth;
 extern GLint		h_vMVIndex;					
 extern bool			fullscreen;
 
-//#endif
+#endif

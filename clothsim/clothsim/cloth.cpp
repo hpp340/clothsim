@@ -37,6 +37,7 @@ cloth::cloth(int _length, int _height){
 	normals =		new DiagonalMatrix(numberverticies, false);
 
 	symblocktemp =	new SymMatrixBlocks(numberverticies,false);
+	symblocktemp2 = new SymMatrixBlocks(numberverticies,false);
 }
 
 
@@ -568,8 +569,8 @@ void cloth::InitCloth(float xsize, float ysize, int mass) {
 	return;
 }
 
-void cloth::GetFStretchOrShear (int index0, int index1, float natlength, float k, 
-							   float kd, SymMatrixBlocks &totaldf_dx, SymMatrixBlocks &totaldf_dv) {
+void cloth::GetFStretchOrShear (int & index0, int & index1, float natlength, float & k, 
+							   float & kd, SymMatrixBlocks &totaldf_dx, SymMatrixBlocks &totaldf_dv) {
 
 	// first get a handler to the positions and the velocities of each vertex in question.
 	pos0 = &(POS->m_block[index0]);
@@ -756,11 +757,37 @@ SymMatrixBlocks* cloth::Mult(double lhs, SymMatrixBlocks &rhs) {
 	return (rhs.temp);
 }
 
+void cloth::Mult(SymMatrixBlocks &result, double lhs, SymMatrixBlocks &rhs) {
+
+	for(int i=0; i<rhs.m_iSize; i++ )
+		{
+			int start = rhs.m_rowstart[i];
+			int length = rhs.m_rowstart[i+1] - start;
+			for(int j = 0; j<length; j++ )
+			{
+				(*(result(i,rhs.m_col_lookup[start+j]))) *= lhs;
+			}
+		}
+}
+
 SymMatrixBlocks* cloth::Mult(SymMatrixBlocks &lhs, double rhs) 
 {
 	lhs.MakeTemp();
 	*lhs.temp *= rhs;
 	return (lhs.temp);
+}
+
+void cloth::Mult(SymMatrixBlocks &result, SymMatrixBlocks &lhs, double rhs) 
+{
+		for(int i=0; i<lhs.m_iSize; i++ )
+		{
+			int start = lhs.m_rowstart[i];
+			int length = lhs.m_rowstart[i+1] - start;
+			for(int j = 0; j<length; j++ )
+			{
+				(*(result(i,lhs.m_col_lookup[start+j]))) *= rhs;
+			}
+		}
 }
 
 SymMatrixBlocks* cloth::Add(SymMatrixBlocks &lhs, SymMatrixBlocks &rhs)
@@ -777,6 +804,24 @@ SymMatrixBlocks* cloth::Sub(SymMatrixBlocks &lhs, SymMatrixBlocks &rhs)
 	return (lhs.temp);
 }
 
+void cloth::Sub(SymMatrixBlocks &result, SymMatrixBlocks &lhs, SymMatrixBlocks &rhs)
+{
+	// check that matrices have compatible sizes; if not, simply return this matrix
+	if(lhs.m_iSize != rhs.m_iSize)
+		throw std::exception("SymMatrixBlocks are not the same size");
+
+	// don't waste time looping through a zero matrix
+	if(rhs.m_bAllZero)
+		return; // Nothing to subtract so just return
+
+	for(int i=0; i<rhs.m_iSize; i++ )
+	{
+		int start = rhs.m_rowstart[i];
+		int length = rhs.m_rowstart[i+1] - start;
+		for(int j = 0; j<length; j++ )
+			(*(result(i, rhs.m_col_lookup[start+j] ))) -= (*(lhs(i, rhs.m_col_lookup[start+j] ))) - (*(rhs.m_matBlock[start+j]));
+	}
+}
 
 DiagonalMatrix* cloth::Mult(double lhs, DiagonalMatrix &rhs)
 {

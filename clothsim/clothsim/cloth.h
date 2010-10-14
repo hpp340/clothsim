@@ -45,6 +45,7 @@ public:
 	DiagonalMatrix*     temp;
 	DiagonalMatrix*     temp2;
 	SymMatrixBlocks*	symblocktemp;
+	SymMatrixBlocks*	symblocktemp2;
 	DiagonalMatrix*		normals;
 
 	// GetFstretchOrShear temps
@@ -90,8 +91,8 @@ public:
 	// it will add the force between those two verticies to the running total.
 	// Note the totaldf_dx reference needed...  We need the address reference, it's just easier
 	// to do it here.
-	void GetFStretchOrShear (int index0, int index1, float natlength, float k, 
-						    float kd, SymMatrixBlocks &totaldf_dx, SymMatrixBlocks &totaldf_dv);
+	void GetFStretchOrShear (int & index0, int & index1, float natlength, float & k, 
+						    float & kd, SymMatrixBlocks &totaldf_dx, SymMatrixBlocks &totaldf_dv);
 	void GetFBend (TrianglePair *input, float k, float kd, SymMatrixBlocks &totaldf_dx, SymMatrixBlocks 
 				   &totaldf_dv);
 	void GetFGravity (int index0, float grav);
@@ -114,10 +115,16 @@ public:
 
 	void GetNormals(void);
 
-	SymMatrixBlocks* Mult(double lhs, SymMatrixBlocks &rhs);
-	SymMatrixBlocks* Mult(SymMatrixBlocks &lhs, double rhs);
+	SymMatrixBlocks* Mult(double lhs, SymMatrixBlocks &rhs); // BIG MEMORY OVERHEAD -> LEAKS
+	void Mult(SymMatrixBlocks &result, double lhs, SymMatrixBlocks &rhs);
+
+	SymMatrixBlocks* Mult(SymMatrixBlocks &lhs, double rhs); // BIG MEMORY OVERHEAD -> LEAKS
+	void Mult(SymMatrixBlocks &result, SymMatrixBlocks &lhs, double rhs);
+
 	SymMatrixBlocks* Add(SymMatrixBlocks &lhs, SymMatrixBlocks &rhs);
-	SymMatrixBlocks* Sub(SymMatrixBlocks &lhs, SymMatrixBlocks &rhs);
+
+	SymMatrixBlocks* Sub(SymMatrixBlocks &lhs, SymMatrixBlocks &rhs); // BIG MEMORY OVERHEAD -> LEAKS
+	void Sub(SymMatrixBlocks &result, SymMatrixBlocks &lhs, SymMatrixBlocks &rhs);
 
 	DiagonalMatrix* Mult(double lhs, DiagonalMatrix &rhs);
 	DiagonalMatrix* Mult(DiagonalMatrix &lhs, double rhs);
