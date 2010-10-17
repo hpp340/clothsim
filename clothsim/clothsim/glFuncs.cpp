@@ -520,71 +520,80 @@ void KeyFunc(unsigned char key, int x, int y)
 		printf("\nAt start\n");
 		cur_frame->UpdateToFrame(*g_cloth);
 
-		BeginMovie(g_width, g_height, KSTRETCH, KDSTRETCH, KSHEAR, KDSHEAR, KBEND, 
-			KDBEND, HSTEP);
-		unsigned char *screendat = new unsigned char[g_width * g_width*100];	
+		unsigned char *screendat;
+		screendat = new unsigned char[g_width * g_width*100];	
 
-		glutPostRedisplay();
-		display();
-		glReadPixels(0, 0, g_width, g_height, GL_BGRA, GL_UNSIGNED_BYTE, screendat);
-		UpdateMovie(g_width, g_height, screendat);
-
-		// do an arc ball routine to make it look nice
-		rbt new_O_frame;
-		rbt O_frame;
-		rbt S_frame;
-		rbt inv_S_frame;
-
-		// find the qrot (from class notes it is [0, v1].[0, v0] hence w = 0) and therefore the rbt Q
-		// This is to spin the ball around
-		qrot rot;
-		rbt Q;
-
-		float T_FPS = 1.0 / 60.0; // trial an error to find movie FPS
-
-		// Axis angle to quaternion
-		//http://www.euclideanspace.com/maths/geometry/rotations/conversions/angleToQuaternion/index.htm
-		coords3 axis;
-		axis.x = 0.0; axis.y = 1.0; axis.z = 0.0;
-		float angle = T_FPS * (45.0/360.0)*(2.0*3.141596); // (rad / sec) * (sec / frame) = rad / frame
-		double mult = sin(angle / 2.0);
-
-		rot.x = axis.x * mult;
-		rot.y = axis.y * mult;
-		rot.z = axis.z * mult;
-		rot.w = cos(angle / 2.0);
-		// normalize the rotation
-		double mag = sqrt(rot.x*rot.x + rot.y*rot.y + rot.z*rot.z + rot.w*rot.w);
-		rot.x = rot.x / mag;
-		rot.y = rot.y / mag;
-		rot.z = rot.z / mag;
-		rot.w = rot.w / mag;
-		Q = rbt(rot);
-
-		while(cur_frame->nextframe != NULL) {
-			cur_frame = cur_frame->nextframe;
-			cur_frame->UpdateToFrame(*g_cloth);
-
-			S_frame.translation = g_base_frame.translation;
-			S_frame.rotation = g_sky_camera.rotation;
-			O_frame = g_sky_camera;
-			inv_S_frame = S_frame.GetInverse();	
-
-			// CARRY OUT THE O' = SQS^(-1)O ROUTINE
-			new_O_frame = S_frame * Q * inv_S_frame * O_frame;
-			g_sky_camera = new_O_frame;
+		if(screendat != NULL)
+		{
+			BeginMovie(g_width, g_height, KSTRETCH, KDSTRETCH, KSHEAR, KDSHEAR, KBEND, 
+				KDBEND, HSTEP);
 
 			glutPostRedisplay();
 			display();
 			glReadPixels(0, 0, g_width, g_height, GL_BGRA, GL_UNSIGNED_BYTE, screendat);
 			UpdateMovie(g_width, g_height, screendat);
+
+			// do an arc ball routine to make it look nice
+			rbt new_O_frame;
+			rbt O_frame;
+			rbt S_frame;
+			rbt inv_S_frame;
+
+			// find the qrot (from class notes it is [0, v1].[0, v0] hence w = 0) and therefore the rbt Q
+			// This is to spin the ball around
+			qrot rot;
+			rbt Q;
+
+			float T_FPS = 1.0 / 60.0; // trial an error to find movie FPS
+
+			// Axis angle to quaternion
+			//http://www.euclideanspace.com/maths/geometry/rotations/conversions/angleToQuaternion/index.htm
+			coords3 axis;
+			axis.x = 0.0; axis.y = 1.0; axis.z = 0.0;
+			float angle = T_FPS * (45.0/360.0)*(2.0*3.141596); // (rad / sec) * (sec / frame) = rad / frame
+			double mult = sin(angle / 2.0);
+
+			rot.x = axis.x * mult;
+			rot.y = axis.y * mult;
+			rot.z = axis.z * mult;
+			rot.w = cos(angle / 2.0);
+			// normalize the rotation
+			double mag = sqrt(rot.x*rot.x + rot.y*rot.y + rot.z*rot.z + rot.w*rot.w);
+			rot.x = rot.x / mag;
+			rot.y = rot.y / mag;
+			rot.z = rot.z / mag;
+			rot.w = rot.w / mag;
+			Q = rbt(rot);
+
+			while(cur_frame->nextframe != NULL) {
+				cur_frame = cur_frame->nextframe;
+				cur_frame->UpdateToFrame(*g_cloth);
+
+				//S_frame.translation = g_base_frame.translation;
+				//S_frame.rotation = g_sky_camera.rotation;
+				//O_frame = g_sky_camera;
+				//inv_S_frame = S_frame.GetInverse();	
+
+				//// CARRY OUT THE O' = SQS^(-1)O ROUTINE
+				//new_O_frame = S_frame * Q * inv_S_frame * O_frame;
+				//g_sky_camera = new_O_frame;
+
+				glutPostRedisplay();
+				display();
+				glReadPixels(0, 0, g_width, g_height, GL_BGRA, GL_UNSIGNED_BYTE, screendat);
+				UpdateMovie(g_width, g_height, screendat);
+			}
+
+			EndMovie();
+			delete [] screendat;
+
+			printf("movie finished \n");
+			printf("\nAt end\n");
 		}
-
-		EndMovie();
-		delete [] screendat;
-
-		printf("movie finished \n");
-		printf("\nAt end\n");
+		else
+		{
+			printf("\nNot enough memory to allocate\n");
+		}
 
 		/*
 		float fps = 60.0; // This is set by the codec usually --> Just trial and error it

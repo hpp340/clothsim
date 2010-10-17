@@ -28,8 +28,8 @@ static bool	reducehstep = false;
 const bool ADPATIVE_TIME_STEP = false; /// FOLLOW BARAFF AND WITKIN'S ALGORITHM FOR ADAPTIVE TIME STEP
 
 //// OPEN GL application globals
-int			g_width				= 960;	/// screen width (previously 1680)     --> This is youTube format for 16:9
-int			g_height			= 540;	/// screen height  (previously 1050)
+int			g_width				= 1280;	/// screen width (previously 1680)     --> This is youTube format for 16:9
+int			g_height			= 720;  /// screen height  (previously 1050)
 bool		g_left_clicked		= false;/// is the left mouse button down?
 bool		g_right_clicked		= false;/// is the right mouse button down?
 int			g_lclick_x, g_lclick_y;		/// coordinates for mouse click event
@@ -45,38 +45,39 @@ bool		g_block = false;
 
 
 // Cloth image hipster_resized.ppm is 512x640 (1:1.25)
-////  CLOTH application globals (start sizes)
-//// SIMULATION 1 --> FREE FALL FROM CORNER VERTICIES
-//float		HSTEP = 0.0083333333333;/// The actual step size...  120Hz MUST BE AN INTEGER MULTIPLE OF 60HZ
-//const float	XNATLENGTH = 0.36;		/// the natural rest length of the cloth (same as g_size, ie at rest to start)
-//const float	YNATLENGTH = 0.45;		/// same but in y direction
-//int			g_clothlength = 10;			/// This is actually how many verticies are down each side (not its physical length)
-//int			g_clothheight = 10;			/// 8 is a good value
-//const float	KSTRETCH = 12000;		/// it should be large according to Baraff and Witkin 12k good value
-//const float	KSHEAR = 1000;			/// 1k is a good value
-//const float	KBEND = 500;			/// 500 is a good value
-//const float	KDSTRETCH = 1000;		/// dampening 1k is a good value if kstretch is 12k
-//const float	KDSHEAR = 600;			/// 0.6k is good value if kshear is 1k
-//const float	KDBEND = 500;			/// 500 is a good value if kbend is 500
-//const float	ERRORTOLERANCE = (float)1e-5;
-//const bool	DRAWSPHERE = false;
-//const bool	SPHERECONTACT = false;
+//  CLOTH application globals (start sizes)
 
-// SIMULATION 2 --> COLLISION WHITH SPHERE
-float		HSTEP = 2.083333333e-4; /// The actual step size...  4.8kHz.  MUST BE AN INTEGER MULTIPLE OF 60HZ
+// SIMULATION 1 --> FREE FALL FROM CORNER VERTICIES
+float		HSTEP = 0.0083333333333;/// The actual step size...  120Hz MUST BE AN INTEGER MULTIPLE OF 60HZ
 const float	XNATLENGTH = 0.36;		/// the natural rest length of the cloth (same as g_size, ie at rest to start)
 const float	YNATLENGTH = 0.45;		/// same but in y direction
 int			g_clothlength = 10;			/// This is actually how many verticies are down each side (not its physical length)
 int			g_clothheight = 10;			/// 8 is a good value
-const float	KSTRETCH = 6000;		/// it should be large according to Baraff and Witkin 12k good value
+const float	KSTRETCH = 12000;		/// it should be large according to Baraff and Witkin 12k good value
 const float	KSHEAR = 1000;			/// 1k is a good value
 const float	KBEND = 500;			/// 500 is a good value
-const float	KDSTRETCH = 500;		/// dampening 1k is a good value if kstretch is 12k
+const float	KDSTRETCH = 1000;		/// dampening 1k is a good value if kstretch is 12k
 const float	KDSHEAR = 600;			/// 0.6k is good value if kshear is 1k
 const float	KDBEND = 500;			/// 500 is a good value if kbend is 500
-const float	ERRORTOLERANCE = (float)1e-4;
-const bool	DRAWSPHERE = true;
-const bool	SPHERECONTACT = true;
+const float	ERRORTOLERANCE = (float)1e-5;
+const bool	DRAWSPHERE = false;
+const bool	SPHERECONTACT = false;
+
+//// SIMULATION 2 --> COLLISION WHITH SPHERE
+//float		HSTEP = 2.083333333e-4; /// The actual step size...  4.8kHz.  MUST BE AN INTEGER MULTIPLE OF 60HZ
+//const float	XNATLENGTH = 0.36;		/// the natural rest length of the cloth (same as g_size, ie at rest to start)
+//const float	YNATLENGTH = 0.45;		/// same but in y direction
+//int			g_clothlength = 10;			/// This is actually how many verticies are down each side (not its physical length)
+//int			g_clothheight = 10;			/// 8 is a good value
+//const float	KSTRETCH = 6000;		/// it should be large according to Baraff and Witkin 12k good value
+//const float	KSHEAR = 1000;			/// 1k is a good value
+//const float	KBEND = 500;			/// 500 is a good value
+//const float	KDSTRETCH = 500;		/// dampening 1k is a good value if kstretch is 12k
+//const float	KDSHEAR = 600;			/// 0.6k is good value if kshear is 1k
+//const float	KDBEND = 500;			/// 500 is a good value if kbend is 500
+//const float	ERRORTOLERANCE = (float)1e-4;
+//const bool	DRAWSPHERE = true;
+//const bool	SPHERECONTACT = true;
 
 cloth *		g_cloth;					/// this is the global cloth class instance
 
